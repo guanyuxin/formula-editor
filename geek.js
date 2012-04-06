@@ -1,49 +1,38 @@
 $(function(){
-
-
-function createClass(methods,SuperClass){
-    var SubClass=function(){
-        this._init.apply(this, arguments);
-    }
-    var agencyInstance;
-    if ( SuperClass == null ) {
-        agencyInstance = methods;
+var FONT_MIN=17;
+var w3c=!$.browser.msie || $.browser.version>8;
+/////////tools////////////////////////////////////////////////////////////////
+/**
+    修改一个类的原型链，实现面向原型的继承
+    @param origClass:要修改的类
+    @param protoMethods:要在protoytpe上添加的方法和属性
+    @param protoLink:protoytpe的指向（也就是origClass的基类）,默认为Object.prototype
+*/
+function buildProto(origClass,protoObject,protoLink){
+    var agencyObject;
+    if ( protoLink == null ) {
+        agencyObject = protoObject;
     } else {
         var AgencyClass = function() {};
-        AgencyClass.prototype = SuperClass.prototype;
-        agencyInstance = new AgencyClass();
-        for ( var item in methods ) {
-            agencyInstance[item] = methods[item];
+        AgencyClass.prototype = protoLink.prototype;
+        agencyObject = new AgencyClass();
+        for ( var item in protoObject ) {
+            agencyObject[item] = protoObject[item];
         }
     }
-    SubClass.prototype = agencyInstance;
-    return SubClass;
+    origClass.prototype = agencyObject;
+    origClass.prototype.base = protoLink;
+    origClass.prototype.constructor = origClass;
 }
-window.Selection={
+/**
+    Selection
+*/
+
+var Selection={
     getRange:function(){
         var selObj = window.getSelection();  
         var range  = selObj.getRangeAt(0);
         return range;
-    },
-    selectStart:function(node){
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        var range = document.createRange();
-        var dest=node.childNodes[0];
-        
-        range.setStart(dest,dest.length);
-        range.setEnd(dest,dest.length);
-        sel.addRange(range);
-    },
-    selectEnd:function(node){
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        var range = document.createRange();
-        var dest=node.childNodes[0];
-        
-        range.setStart(dest,dest.length);
-        range.setEnd(dest,dest.length);
-        sel.addRange(range);
     },
     select:function(node,start,end){
         var sel = window.getSelection();
@@ -67,38 +56,94 @@ window.Selection={
         sel.addRange(range);
     }
 }
-var Exp=createClass({
-    _init:function(parent){
-        var type;
-        this.parent=parent
-        this.children=[];
-        this.ele=$('<span class="exp" index="'+Exp.count+'"></span>');
-        this.height=0;
-        this.baseline=0;
-        //this.ctrl=new ExpController(this);
-        this.index=Exp.count;
-        Exp.instances[Exp.count++]=this;
+/////////////////
+function countHtml(str){
+    return str.replace(/&nbsp;/g,' ').length;
+}
+////////use VML for ie and SVG for the rest ///////////////////
+if(w3c)
+    var getSymbol=createSymbol;
+else
+    var getSymbol=createSymbolIE;
+//////////////////////event support//////////////////////
+if(!w3c){
+    function w3cEvent(e){
+        this.event=e;
+        this.target=e.srcElement;
+        this.keyCode=e.keyCode;
+    }
+    buildProto(w3cEvent,{
+        preventDefault:function(){this.event.returnValue=false;},
+        stopPropagation:function(){this.event.cancelBubble=true;}
+    });
+}
+function bindEvent(elem,type,callBack,scope){
+    if(w3c){
+        elem.addEventListener(type,function(e){
+            callBack.call(scope||elem,e);
+        });
+    }else{
+        elem.attachEvent("on"+type,function(){
+            callBack.call(scope||elem,new w3cEvent(window.event));
+        });
+    }
+}
+function removeEvent(elem,type,callBack){
+    if(w3c){
+        elem.removeEventListener(type,callBack);
+    }else{
+        elem.detachEvent(type,callBack);
+    }
+}
+/////////////base////////////////////////////////////////////////////
+var Exp=function(parent){
+    var type;
+    this.parent=parent
+    if(!parent){
+        this.root=this;
+    }else{
+        this.root=parent.root;
+    }
+    this.children=[];
+    this.ele=$('<span class="exp" index="'+Exp.count+'"></span>');
+    this.height=0;
+    this.baseline=0;
+    //this.ctrl=new ExpController(this);
+    this.index=Exp.count;
+    Exp.instances[Exp.count++]=this;
+}
+buildProto(Exp,{
+    getSize:function(){
+        var max=FONT_MIN;
+        for(var i=this.children.length-1;i>=0;i--){
+            var childSize=this.children[i].getSize();
+            if(max<childSize)
+                max=childSize;
+        }
+        return max;
+    },
+    refresh:function(){
+        var size=this.root.getSize();
+        $("#EXP").html(this.root.render(size));
+        $("#EXP").css("left",1);
     }
 });
 Exp.count=0;
 Exp.instances=[];
-var ExpCtrl=createClass({
-    _init:function(exp){
-        this.exp=exp;
-        var ele=exp.ele[0];
-        //不可以使用jquery.bind,在重新渲染的时候会被刷掉
-        if(ele.addEventListener){
-            ele.addEventListener("mouseover",this.mouseover);
-            ele.addEventListener("mouseout",this.mouseout);
-            ele.addEventListener("keydown",this.keydown);
-            //ele[0].addEventListener("input",this.oninput);
-        }else{
-            ele.attachEvent("onmouseover",this.mouseover);
-            ele.attachEvent("onmouseout",this.mouseout);
-            ele.attachEvent("onkeydown",this.keydown);
-            //this.ele[0].childNodes[0].attachEvent("onpropertychange",function(){oninput.call(_this);});
-        }
-    },
+Exp.getInstance=function(ele){
+    return Exp.instances[ele.attr("index")].ctrl;
+}
+
+var ExpCtrl=function(exp){
+    this.exp=exp;
+    var ele=exp.ele[0];
+    //不可以使用jquery.bind,在重新渲染的时候会被刷掉
+    bindEvent(ele,"mouseover",this.mouseover);
+    bindEvent(ele,"mouseout",this.mouseout);
+    bindEvent(ele,"keydown",this.keydown);
+    bindEvent(ele,"keyup",this.keyup);
+}
+buildProto(ExpCtrl,{
     removeChild:function(child){
         var childIndex=this.index(child);
         if(childIndex!=-1){
@@ -161,44 +206,75 @@ var ExpCtrl=createClass({
         }else{
             this.exp.ele.focus();
             if(cursor==-1)
-                Selection.selectEnd(this.exp.ele[0]);
+                Selection.select(this.exp.ele[0],-1);
         }
     },
     mouseover:function(e){
         var ele=$(this);
-        e.stopPropagation();
         ele.addClass("hover");
+        e.stopPropagation();
+        return false;
     },
     mouseout:function(e){
         var ele=$(this);
-        e.stopPropagation();
         ele.removeClass("hover")
+        e.stopPropagation();
+        return false;
     },
     keydown:function(e){
         var ele=$(this);
-        var _this=Exp.instances[ele.attr("index")].ctrl;
-        e.stopPropagation();
-        e.preventDefault();
+        var _this=Exp.getInstance(ele);
+        var specialKey=true;
         if(e.keyCode==KEY.up){
-            _this.child(-1).select(0);
+            var parent=_this.parent();
+            if(parent)
+                parent.select();
         }else if(e.keyCode==KEY.down){
-            _this.child(0).select();
+            var child=_this.child(0);
+            if(child)
+                child.select();
         }else if(e.keyCode==KEY.left){
             var dest=_this.prev();
             if(dest){
                 dest.select(-1);
-            }else{
-                
             }
         }else if(e.keyCode==KEY.right){
             var dest=_this.next();
             if(dest){
                 dest.select(0);
-            }else{
             }
         }else if(e.keyCode==KEY.del){
             _this.parent().removeChild(_this);
         }else if(e.keyCode==KEY.back){
+        }else if(e.keyCode==KEY.ctrl){
+            var right=_this.prev();
+            var left=_this.next();
+            var up=_this.parent();
+            var down=_this.child(0);
+            if(right){
+                right.exp.ele.addClass("indicate")
+            }
+            if(left){
+                left.exp.ele.addClass("indicate")
+            }
+            if(up){
+                up.exp.ele.addClass("indicate")
+            }
+            if(down){
+                down.exp.ele.addClass("indicate")
+            }
+        }else{
+            specialKey=false;
+        }if(specialKey){
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    },
+    keyup:function(e){
+        var ele=$(this);
+        var _this=Exp.getInstance(ele);
+        if(e.keyCode==KEY.ctrl){
+            _this.exp.root.ele.find(".indicate").removeClass("indicate");
         }
     },
     focus:function(e){
@@ -210,44 +286,35 @@ var ExpCtrl=createClass({
         e.stopPropagation();
         var ele=$(this);
         ele.removeClass("focus");
-    },
-    oninput:function(){
-        //var ele=$(this);
-        //var _this=Exp.instances[ele.attr("index")].ctrl;
-        //alert(1);
-    }
+    }    
 });
 /////////text////////////////////////////////////////////////////////////////////////////
-var TextExp=createClass({
-    _init:function(parent,value){
-        Exp.prototype._init.call(this,parent);
-        this.ctrl=new TextExpCtrl(this);
-        this.value=value||"";
-        this.ele.addClass("text");
-    },
-    render:function(){
+var TextExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new TextExpCtrl(this);
+    this.value=value||"";
+    this.ele.addClass("text");
+}
+buildProto(TextExp,{
+    render:function(size){
         this.ele.empty();
-        this.ele.text(this.value);
+        this.ele.html(this.value).css("font-size",size);
         $("#TEST").html(this.ele);
         this.height=this.ele.height();
-        this.baseline=this.height/2;
+        this.baseline=this.height*0.5;
         return this.ele;
     }
 },Exp);
-var TextExpCtrl=createClass({
-    _init:function(exp){
-        ExpCtrl.prototype._init.call(this,exp);
-        var ele=exp.ele;
-        if(ele[0].addEventListener){
-            ele[0].addEventListener("focus",this.focus);
-            ele[0].addEventListener("blur",this.blur);
-        }else{
-            ele[0].attachEvent("onfocus",this.focus);
-            ele[0].attachEvent("onblur",this.blur);
-        }
-        ele.attr("spellcheck","false");
-        ele.attr("contenteditable","true");
-    },
+var TextExpCtrl=function(exp){
+    this.base.call(this,exp);
+    var ele=exp.ele[0];
+    bindEvent(ele,"focus",this.focus);
+    bindEvent(ele,"blur",this.blur);
+    bindEvent(ele,"input",this.input);
+    exp.ele.attr("spellcheck","false");
+    exp.ele.attr("contenteditable","true");
+}
+buildProto(TextExpCtrl,{
     keydown:function(e){
         var ele=$(this);
         e.stopPropagation();
@@ -260,22 +327,27 @@ var TextExpCtrl=createClass({
             return;
         if(e.keyCode==KEY.right && !(range.startOffset==range.endOffset && range.endOffset==value.length))
             return;
-        if(e.keyCode==KEY.left || e.keyCode==KEY.right || e.keyCode==KEY.up || e.keyCode==KEY.down)
+        //if(e.keyCode==KEY.left || e.keyCode==KEY.right || e.keyCode==KEY.up || e.keyCode==KEY.down)
             ExpCtrl.prototype.keydown.call(this,e);
+    },
+    input:function(){
+        var ele=$(this);
+        var _this=Exp.getInstance(ele);
+        _this.exp.value=ele.html();
     }
 },ExpCtrl);
 ///////////liner////////////////////////////////////////////////////////////////////////////
-var LinerExp=createClass({
-    _init:function(parent,value){
-        Exp.prototype._init.call(this,parent);
-        this.ctrl=new LinerExpCtrl(this);
-        this.ele.addClass("liner");
-    },
-    render:function(){
+var LinerExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new LinerExpCtrl(this);
+    this.ele.addClass("liner");
+}
+buildProto(LinerExp,{
+    render:function(size){
         this.ele.empty();
         var maxBaseline=0;
         for(var i=this.children.length-1;i>=0;i--){
-            this.ele.prepend(this.children[i].render());
+            this.ele.prepend(this.children[i].render(size));
             if(this.children[i].baseline>maxBaseline)
                 maxBaseline=this.children[i].baseline;
         }
@@ -288,10 +360,10 @@ var LinerExp=createClass({
         return this.ele;
     }
 },Exp);
-var LinerExpCtrl=createClass({
-    _init:function(exp){
-        ExpCtrl.prototype._init.call(this,exp);
-    },
+var LinerExpCtrl=function(exp){
+    this.base.call(this,exp);
+}
+buildProto(LinerExpCtrl,{
     removeChild:function(child){
         var childIndex=this.index(child);
         if(!child)
@@ -299,10 +371,10 @@ var LinerExpCtrl=createClass({
         if(child instanceof TextExp)
             this.exp.children[childIndex]=new TextExp();
             
-        var l=this.exp.children[childIndex-1].value.length;
+        var l=countHtml(this.exp.children[childIndex-1].value);
         this.exp.children[childIndex-1].value+=this.exp.children[childIndex+1].value;
         this.exp.children.splice(childIndex,2);
-        $("#EXP").html(root.render());
+        this.exp.refresh();
         this.exp.children[childIndex-1].ctrl.select();
         Selection.select(this.exp.children[childIndex-1].ele[0],l,l);
     },
@@ -315,68 +387,161 @@ var LinerExpCtrl=createClass({
     }
 },ExpCtrl);
 //////fraction////////////////////////////////////////////////////////////////////////////
-var FractionExp=createClass({
-    _init:function(parent,value){
-        Exp.prototype._init.call(this,parent);
-        this.ctrl=new FractionExpCtrl(this);
-        this.ele.addClass("fraction");
-    },
-    render:function(){
+var FractionExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new FractionExpCtrl(this);
+    this.ele.addClass("fraction");
+}
+buildProto(FractionExp,{
+    render:function(size){
         this.ele.empty();
-        this.ele.append(this.children[FractionExp.UPPER].render().addClass("upper"));
+        this.ele.append(this.children[FractionExp.UPPER].render(size).addClass("upper"));
         this.ele.append('<div class="hr"></div>');
-        this.ele.append(this.children[FractionExp.LOWER].render().addClass("lower"));
+        this.ele.append(this.children[FractionExp.LOWER].render(size).addClass("lower"));
         $("#TEST").html(this.ele);
         this.height=this.ele.height();
         this.baseline=this.children[FractionExp.LOWER].height;
         return this.ele;
     }
 },Exp);
-var FractionExpCtrl=createClass({
-    _init:function(exp){
-        ExpCtrl.prototype._init.call(this,exp);
-    },
+FractionExp.UPPER=1;
+FractionExp.LOWER=0;
+
+var FractionExpCtrl=function(exp){
+    this.base.call(this,exp);
+}
+buildProto(FractionExpCtrl,{
     removeChild:function(child){
         var childIndex=this.index(child);
         child.remove();
         this.exp.children[childIndex]=new LinerExp(this);
         this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
-        $("#EXP").html(root.render());
+        this.exp.refresh();
         this.exp.children[childIndex].children[0].ctrl.select();
     }
 },ExpCtrl);
-FractionExp.UPPER=1;
-FractionExp.LOWER=0;
-//////bracket////////////////////////////////////////////////////////////////////////////
-var BracketExp=createClass({
-    _init:function(parent,value){
-        Exp.prototype._init.call(this,parent);
-        this.ctrl=new BracketExpCtrl(this);
-        this.ele.addClass("bracket");
+///////corner//////////////////////////////////////////////////////////////////////////
+var CornerExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new FractionExpCtrl(this);
+    this.ele.addClass("fraction");
+}
+buildProto(CornerExp,{
+    render:function(size){
+        this.ele.empty();
+        this.ele.append(this.children[CornerExp.UPPER].render(size-5).addClass("upper"));
+        this.ele.append(this.children[CornerExp.LOWER].render(size-5).addClass("lower"));
+        $("#TEST").html(this.ele);
+        this.height=this.ele.height();
+        this.baseline=this.children[CornerExp.LOWER].height;
+        return this.ele;
     },
-    render:function(){
+    getSize:function(){
+        var max=FONT_MIN;
+        var upperSize=this.children[RadicalExp.EXPONENT].getSize();
+        var lowerSize=this.children[RadicalExp.BASE].getSize();
+        if(max<upperSize+5)
+            max=upperSize+5;
+        if(max<lowerSize+5)
+            max=lowerSize+5;
+        return max;
+    }
+},Exp);
+CornerExp.UPPER=1;
+CornerExp.LOWER=0;
+
+var CornerExpCtrl=function(exp){
+    this.base.call(this,exp);
+}
+buildProto(CornerExpCtrl,{
+    removeChild:function(child){
+        var childIndex=this.index(child);
+        child.remove();
+        this.exp.children[childIndex]=new LinerExp(this);
+        this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
+        this.exp.refresh();
+        this.exp.children[childIndex].children[0].ctrl.select();
+    }
+},ExpCtrl);
+//////radical////////////////////////////////////////////////////////////////////////////
+var RadicalExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new RadicalExpCtrl(this);
+    this.ele.addClass("radical");
+}
+buildProto(RadicalExp,{
+    render:function(size){
         this.ele.html('<span class="symbol"></span><span class="block"></span>');
-        var block=this.ele.find(".block");
+        var block=this.ele.children(".block");
+        block.prepend(this.children[RadicalExp.BASE].render(size).addClass("base"));
+        $("#TEST").html(this.ele);
+        this.ele.children(".symbol").html(getSymbol("radical",block.height())).css("margin-left","-7");
+        this.ele.prepend(this.children[RadicalExp.EXPONENT].render(size-5).addClass("exponent"));
+        this.height=this.ele.height();
+        this.baseline=this.children[RadicalExp.BASE].baseline;
+        this.children[RadicalExp.EXPONENT].ele.css("bottom",this.baseline);
+        return this.ele;
+    },
+    getSize:function(){
+        var max=FONT_MIN;
+        var expSize=this.children[RadicalExp.EXPONENT].getSize();
+        var baseSize=this.children[RadicalExp.BASE].getSize();
+        if(max<expSize+5)
+            max=expSize+5;
+        if(max<baseSize)
+            max=baseSize;
+        return max;
+    }
+},Exp);
+RadicalExp.BASE=1;
+RadicalExp.EXPONENT=0;
+
+var RadicalExpCtrl=function(exp){
+    this.base.call(this,exp);
+}
+buildProto(RadicalExpCtrl,{
+    removeChild:function(child){
+        var childIndex=this.index(child);
+        child.remove();
+        var newChild=new LinerExp(this);
+        this.exp.children[childIndex]=newChild;
+        newChild.children[0]=new TextExp(newChild,"");
+        this.exp.refresh();
+        newChild.children[0].ctrl.select();
+    }
+},ExpCtrl);
+
+//////bracket////////////////////////////////////////////////////////////////////////////
+var BracketExp=function(parent,value){
+    this.base.call(this,parent);
+    this.ctrl=new BracketExpCtrl(this);
+    this.ele.addClass("bracket");
+}
+buildProto(BracketExp,{
+    render:function(size){
+        this.ele.html('<span class="symbol"></span><span class="block"></span>');
+        var block=this.ele.children(".block");
         for(var i=this.children.length-1;i>=0;i--){
-            block.prepend(this.children[i].render().addClass("item"));
+            block.prepend(this.children[i].render(size).addClass("item"));
         }
         $("#TEST").html(this.ele);
-        this.ele.find(".symbol").html(getSymbol("brackets",this.ele.find(".block").height()));
+        this.ele.children(".symbol").html(getSymbol("brackets",block.height()));
         this.height=this.ele.height();
         this.baseline=this.height/2;
         return this.ele;
     }
-});
-var BracketExpCtrl=createClass({
-    _init:function(exp){
-        ExpCtrl.prototype._init.call(this,exp);
-    },
+},Exp);
+
+var BracketExpCtrl=function(exp){
+    this.base.call(this,exp);
+}
+buildProto(BracketExpCtrl,{
     removeChild:function(child){
         var childIndex=this.index(child);
         child.remove();
         this.exp.children[childIndex]=new LinerExp(this);
         this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
-        $("#EXP").html(root.render());
+        this.exp.refresh();
         this.exp.children[childIndex].children[0].ctrl.select();
     }
 },ExpCtrl);
@@ -390,7 +555,10 @@ var KEY={
     right:39,
     back:8,
     del:46,
-    enter:13
+    enter:13,
+    ctrl:17,
+    alt:18,
+    shift:16
 }
 var Agent={
     delegater:null,
@@ -402,6 +570,9 @@ var Agent={
     agentKeyDown:function(e){
         Agent.delegater.keydown.call(Agent.delegater.exp.ele,e);
     },
+    agentKeyUp:function(e){
+        Agent.delegater.keyup.call(Agent.delegater.exp.ele,e);
+    },
     agentFocus:function(e){
         if(Agent.delegater)
             Agent.delegater.focus.call(Agent.delegater.exp.ele,e);
@@ -411,44 +582,87 @@ var Agent={
             Agent.delegater.blur.call(Agent.delegater.exp.ele,e);
     }
 }
-$("#AGENT").keydown(Agent.agentKeyDown).blur(Agent.agentBlur).focus(Agent.agentFocus);
+$("#AGENT").keydown(Agent.agentKeyDown).keyup(Agent.agentKeyUp).blur(Agent.agentBlur).focus(Agent.agentFocus);
 ////////////////////////////////////////////////////////////////////////////
 var ExpType={
     text:0,
     liner:1,
-    fraction:2,
-    bracket:3
+    bracket:2,
+    fraction:3,
+    radical:4,
+    corner:5
 }
 var module=
-{type:3,children:[
+{type:2,children:[
     {type:1,children:[
-        {type:0,value:"123 + "},
-        {type:2,
-            upper:{type:1,children:[
-                {type:0,value:"123 + "},
-                {type:2,
-                    upper:{type:1,children:[{type:0,value:"dx"}]},
-                    lower:{type:1,children:[{type:0,value:"dy"}]}
-                },
-                {type:0,value:"x"}
-            ]},
-            lower:{type:1,children:[
-                {type:0,value:"123"}
-            ]}
+        "x",
+        {type:5,
+            upper:"",
+            lower:"1"
         },
-        {type:0,value:" - 456"} 
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b + ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2",
+                            lower:""
+                        },
+                        " - 4ac"
+                    ]},
+                    exponent:"2"
+                },
+                ""
+            ]},
+            lower:"2a"
+        },
+        ""
     ]},
     {type:1,children:[
-        {type:0,value:"x^7+3x-5    (x>0)"}
-    ]},
-    {type:1,children:[
-        {type:0,value:"123+ (impossible)"}
+        "x",
+        {type:5,
+            upper:"",
+            lower:"2"
+        },
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b - ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2",
+                            lower:""
+                        },
+                        " - 4ac"
+                    ]},
+                    exponent:"2"
+                },
+                ""
+            ]},
+            lower:"2a"
+        },
+        ""
     ]}
 ]};
-
+function warp(exp){
+    if(exp instanceof LinerExp)
+        return exp;
+    var liner=new LinerExp(exp.parent);
+    exp.parent=liner;
+    liner.children[0]=exp;
+    return liner;
+}
 function moduleReader(parent,src){
-    if(src.type==ExpType.text){
-        return new TextExp(parent,src.value);
+    if(typeof(src)=="string"){
+        return new TextExp(parent,src.replace(/ /g,"&nbsp;"));
+    }
+    else if(src.type==ExpType.text){
+        return new TextExp(parent,src.value.replace(/ /g,"&nbsp;"));
     }else if(src.type==ExpType.liner){
         var exp=new LinerExp(parent);
         for(var j=src.children.length-1;j>=0;j--){
@@ -457,8 +671,8 @@ function moduleReader(parent,src){
         return exp;
     }else if(src.type==ExpType.fraction){
         var exp=new FractionExp(parent);
-        exp.children[FractionExp.UPPER]=moduleReader(exp,src.upper);
-        exp.children[FractionExp.LOWER]=moduleReader(exp,src.lower);
+        exp.children[FractionExp.UPPER]=warp(moduleReader(exp,src.upper));
+        exp.children[FractionExp.LOWER]=warp(moduleReader(exp,src.lower));
         return exp;
     }else if(src.type==ExpType.bracket){
         var exp=new BracketExp(parent);
@@ -466,20 +680,28 @@ function moduleReader(parent,src){
             exp.children.unshift(moduleReader(exp,src.children[j]));
         }
         return exp;
+    }else if(src.type==ExpType.radical){
+        var exp=new RadicalExp(parent);
+        exp.children[RadicalExp.BASE]=warp(moduleReader(exp,src.base));
+        exp.children[RadicalExp.EXPONENT]=warp(moduleReader(exp,src.exponent));
+        return exp;
+    }else if(src.type==ExpType.corner){
+        var exp=new CornerExp(parent);
+        exp.children[CornerExp.UPPER]=warp(moduleReader(exp,src.upper));
+        exp.children[CornerExp.LOWER]=warp(moduleReader(exp,src.lower));
+        return exp;
     }
 }
-window.root=moduleReader(null,module);
-$("#EXP").html(root.render());
-//$("#EXP").html(getSymbol("brackets",90));
-});
-window.w3c=!$.browser.msie || $.browser.version>8;
-if(w3c)
-    window.getSymbol=createSymbol;
-else
-    window.getSymbol=createSymbolIE;
+
+var Exp1=moduleReader(null,module);
+Exp1.refresh();
+
 function createSymbolIE(type,size){
     if(type=="radical"){
-        return 1;
+        var w=size/2;
+        return  '<v:group style="position:relative;width:'+w+'px;height:'+size+'px;" coordsize="'+w+','+size+'">'+
+                    '<v:PolyLine  fill="false" stroke="black" points="0,'+(size*0.85)+' '+(w*0.1)+','+(size*0.7)+' '+(w*0.4)+','+size+' '+w+',0"/>'+
+                '</v>';
     }else if(type="bracket"){
         var c=size/2;
         var symbol= '<v:group style="position:relative;width:10px;height:'+size+'px;" coordsize="10,'+size+'">'+
@@ -513,3 +735,5 @@ function createSymbol(type,size){
         return symbol;
     }
 }
+
+});

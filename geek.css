@@ -1,37 +1,66 @@
-span.exp{
-    font-family: Arial; 
-    font-size:20px;
+.exp{
+    font-family: Arial;
     outline:0;
     position:relative;
+    border:1px solid transparent;
+    display:inline;
 }
-.fraction .exp{
+    .hover{
+        border:1px dashed black;
+    }
+    .focus{
+        background-color:#ffc;
+        border:1px dashed black;
+    }
+    .indicate{
+        background-color:#cff;
+        border:1px dashed #acc;
+    }
+/*****/
+
+.fraction{
     text-align:center;
-}
-.item{
-    margin-bottom:10px;
-}
-.exp.liner{
-    display:block;
-}
-.text{
-    min-width:10px;
-    min-height:10px;
-}
-.fraction,.text{
     display:inline-block;
-}
-.hover{
-    border:1px dashed black;
 }
 .hr{
     border:0px;
     border-top:1px solid black;
 }
-.focus{
-    background-color:#ffc;
-    border:1px dashed black;
+
+.text{
+    text-align:left;
+    display:inline-block;
+    min-width:10px;
+    min-height:20px;
+}
+
+.radical{
+    display:inline-block;
+}
+.radical .block{
+    border-top:1px solid black;
+}
+.radical .exponent{
+    display:inline-block;
+    vertical-align:middle;
+}
+
+.bracket{
+    display: inline-block;
+}
+.bracket .item{
+    margin-bottom:10px;
 }
 
 .symbol,.block{
     display:inline-block;
+    vertical-align:middle;
 }
+
+.liner{
+    display:block;
+}
+.liner .exp{
+    vertical-align:bottom;
+}
+    
