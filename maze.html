@@ -25,13 +25,13 @@
 <style>v\: * { behavior:url(#default#VML);display:inline-block }</style>
 <xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v" />
 <div id="buttons">
-    <span class="btn" id="ADD_FRACTION">fraction</span>
+    <span class="btn" >fraction</span> <span class="btn" >corner</span>
 </div>
-<div id="EXP">
+<div id="EXP" class="editing">
 </div>
 <div contenteditable="true" style="width:0;height:0;outline:0" id="AGENT">
 </div>
-<div id="TEST">
+<div id="TEST"  class="editing">
 </div>
 
 </body>
@@ -87,12 +87,12 @@ var module=
         }
     ]}
 ]};
-window.formula=new Fomula($("EXP"),module);
+window.formula=new Fomula($("#EXP"),module);
 formula.refresh();
-$("#ADD_FRACTION").mousedown(function(e){
+$(".btn").mousedown(function(e){
     var a=formula.focusExp;
     console.log(a);
-    a.insert()
+    a.insert(this.innerHTML);
     e.preventDefault();
 })
 });

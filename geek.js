@@ -347,8 +347,12 @@ var TextExp=function(value){
 buildProto(TextExp,{
     render:function(size){
         this.ele.empty();
-        this.ele.html(this.value.replace(/ /g,"&nbsp;")).css("font-size",size);
-        $("#TEST").html(this.ele);
+		if(!this.value){
+			this.ele.html("+").addClass("empty").css("font-size",size);
+		}else{
+			this.ele.html(this.value.replace(/ /g,"&nbsp;")).css("font-size",size);
+        }
+		$("#TEST").html(this.ele);
         this.height=this.ele.height();
         this.baseline=this.height*0.5;
         return this.ele;
@@ -376,19 +380,35 @@ buildProto(TextExpCtrl,{
             return;
         ExpCtrl.prototype.keydown.call(this,e);
     },
+	focus:function(e){
+		if(!this.exp.value){
+			this.exp.ele.html("").removeClass("empty");
+		}
+		ExpCtrl.prototype.focus.call(this,e);
+	},
     blur:function(e){
         this.exp.value=this.exp.ele.text();
+		if(!this.exp.value){
+			this.exp.ele.addClass("empty").html("+");
+		}
         ExpCtrl.prototype.blur.call(this,e);
     },
-    insert:function(){
+    insert:function(type){
         var range=Selection.getRange();
         
         //chrome bug
         this.exp.ele.blur();
-        
-        var value1=this.exp.value.substring(0,range.startOffset);
+        if(type=="fraction")
+			var newExp=new FractionExp();
+        else if(type=="corner")
+			var newExp=new CornerExp();
+		else if(type=="radical")
+			var newExp=new RadicalExp();
+		else if(type=="bracker")
+			var newExp=new BracketExp();
+		var value1=this.exp.value.substring(0,range.startOffset);
         var value2=this.exp.value.substring(range.endOffset);
-        var newExp=new FractionExp();
+        
         newExp.parent=this.exp;
         var newText=new TextExp(value1);
         newText.parent=this.exp;
@@ -397,6 +417,7 @@ buildProto(TextExpCtrl,{
         var i=this.index();
         arr.splice(i,0,newText,newExp);
         this.root().refresh();
+		newExp.ctrl.select();
     }
 },ExpCtrl);
 ///////////liner////////////////////////////////////////////////////////////////////////////
