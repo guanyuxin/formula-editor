@@ -3,20 +3,97 @@
 <link href="geek.css" type="text/css" rel="stylesheet">
 
 <script type="text/javascript" src="Core.js"></script>
-<script type="text/javascript" src="ierange.js"></script>
 <script type="text/javascript" src="geek.js"></script>
-
+<style>
+    .btn{
+        text-align:center;
+        display:inline-block;
+        width:100px;
+        height:20px;
+        border:2px solid gray;
+        cursor:hand;
+        margin:3px;
+        font-weight:bold;
+    }
+    .btn:hover{
+        background-color:yellow;
+    }
+</style>
 </head>
 <body>
 
 <style>v\: * { behavior:url(#default#VML);display:inline-block }</style>
 <xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v" />
+<div id="buttons">
+    <span class="btn" id="ADD_FRACTION">fraction</span>
+</div>
 <div id="EXP">
 </div>
-<input type=text id="AGENT">
+<div contenteditable="true" style="width:0;height:0;outline:0" id="AGENT">
 </div>
 <div id="TEST">
 </div>
 
 </body>
 </html>
+<script>
+$(function(){
+var module=
+{type:2,children:[
+    {type:1,children:[
+        "x",
+        {type:5,
+            lower:"1"
+        },
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b + ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2"
+                        },
+                        " - 4ac"
+                    ]},
+                    exponent:"2"
+                }
+            ]},
+            lower:"2a"
+        }
+    ]},
+    {type:1,children:[
+        "x",
+        {type:5,
+            lower:"2"
+        },
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b - ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2"
+                        },
+                        " - 4ac"
+                    ]},
+                    exponent:"2"
+                }
+            ]},
+            lower:"2a"
+        }
+    ]}
+]};
+window.formula=new Fomula($("EXP"),module);
+formula.refresh();
+$("#ADD_FRACTION").mousedown(function(e){
+    var a=formula.focusExp;
+    console.log(a);
+    a.insert()
+    e.preventDefault();
+})
+});
+</script>

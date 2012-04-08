@@ -25,40 +25,75 @@ function buildProto(origClass,protoObject,protoLink){
     origClass.prototype.constructor = origClass;
 }
 /**
-    Selection
+    Selection 简单的选择控制
 */
-
-var Selection={
-    getRange:function(){
-        var selObj = window.getSelection();  
-        var range  = selObj.getRangeAt(0);
-        return range;
-    },
-    select:function(node,start,end){
-        var sel = window.getSelection();
-        sel.removeAllRanges();
-        var range = document.createRange();
-        var dest=node.childNodes[0];
-        
-        if(typeof start=="undefined"){
-            start=0;
-            end=0;
+if(w3c){
+    var Selection={
+        getRange:function(){
+            var selObj = window.getSelection();  
+            var range  = selObj.getRangeAt(0);
+            return range;
+        },
+        select:function(node,start,end){
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            var range = document.createRange();
+            var dest=node.childNodes[0];
+            
+            if(typeof start=="undefined"){
+                start=0;
+                end=0;
+            }
+            if(start==-1){
+                start=dest.length;
+            }
+            if(typeof end=="undefined"){
+                end=start;
+            }
+            range.setStart(dest,start);
+            range.setEnd(dest,end);
+            sel.addRange(range);
         }
-        if(start==-1){
-            start=dest.length;
-        }
-        if(typeof end=="undefined"){
-            start=0;
-            end=start;
-        }
-        range.setStart(dest,start);
-        range.setEnd(dest,end);
-        sel.addRange(range);
     }
-}
-/////////////////
-function countHtml(str){
-    return str.replace(/&nbsp;/g,' ').length;
+}else{
+    var Selection={
+        getRange:function(){
+            var range = document.selection.createRange();
+            var rangeRuler=range.duplicate();
+            var node=range.parentElement();
+            rangeRuler.moveToElementText(node);
+            rangeRuler.collapse(true);
+            
+            rangeRuler.setEndPoint('EndToStart', range);
+            var startOffset=rangeRuler.text.length;
+            rangeRuler.setEndPoint('EndToEnd', range);
+            var endOffset=rangeRuler.text.length;
+            
+            return{
+                startOffset:startOffset,
+                endOffset:endOffset
+            };
+        },
+        select:function(node,start,end){
+            var dest=node.childNodes[0];
+            if(typeof start=="undefined"){
+                start=0;
+                end=0;
+            }
+            if(start==-1){
+                start=dest.length;
+            }
+            if(typeof end=="undefined"){
+                end=start;
+            }
+            var range  = document.selection.createRange();
+            range.moveToElementText(node);
+            range.collapse(true);
+            range.moveStart('character',start);
+            range.moveEnd('character',end-start);
+            range.select();
+        }
+    }
 }
 ////////use VML for ie and SVG for the rest ///////////////////
 if(w3c)
@@ -77,14 +112,21 @@ if(!w3c){
         stopPropagation:function(){this.event.cancelBubble=true;}
     });
 }
-function bindEvent(elem,type,callBack,scope){
+function bindEvent(elem,type,callBack,option){
+    option=$.extend({
+        refuseBubble:false
+    },option||{});
     if(w3c){
         elem.addEventListener(type,function(e){
-            callBack.call(scope||elem,e);
+            if(option.refuseBubble && $(e.target).closest(".exp")[0]!=e.currentTarget)
+                return;
+            callBack.call(option.scope||elem,e);
         });
     }else{
         elem.attachEvent("on"+type,function(){
-            callBack.call(scope||elem,new w3cEvent(window.event));
+            if(option.refuseBubble && $(event.srcElement).closest(".exp")[0]!=elem)
+                return;
+            callBack.call(option.scope||elem,new w3cEvent(window.event));
         });
     }
 }
@@ -95,22 +137,34 @@ function removeEvent(elem,type,callBack){
         elem.detachEvent(type,callBack);
     }
 }
-/////////////base////////////////////////////////////////////////////
-var Exp=function(parent){
-    var type;
-    this.parent=parent
-    if(!parent){
-        this.root=this;
-    }else{
-        this.root=parent.root;
+//////Fomula////////////////////////////////////////////////
+window.Fomula=function(anchor,data){
+    this.anchor=anchor;
+    this.root=moduleReader(data);
+    this.root.parent=this;
+    this.focusExp=null;
+}
+buildProto(Fomula,{
+    refresh:function(){
+        var size=this.root.getSize();
+        $(this.anchor).html(this.root.render(size));
     }
+});
+/////////////base////////////////////////////////////////////////////
+var Exp=function(children){
     this.children=[];
-    this.ele=$('<span class="exp" index="'+Exp.count+'"></span>');
+    if(children){
+        for(var i=0,il=children.length;i<il;i++){
+            var child=children[i];
+            if(!child)
+                child=new LinerExp([]);
+            this.children[i]=child;
+            child.parent=this;
+        }
+    }
+    this.ele=$('<span class="exp"></span>');
     this.height=0;
     this.baseline=0;
-    //this.ctrl=new ExpController(this);
-    this.index=Exp.count;
-    Exp.instances[Exp.count++]=this;
 }
 buildProto(Exp,{
     getSize:function(){
@@ -121,41 +175,43 @@ buildProto(Exp,{
                 max=childSize;
         }
         return max;
-    },
-    refresh:function(){
-        var size=this.root.getSize();
-        $("#EXP").html(this.root.render(size));
-        $("#EXP").css("left",1);
     }
 });
-Exp.count=0;
-Exp.instances=[];
-Exp.getInstance=function(ele){
-    return Exp.instances[ele.attr("index")].ctrl;
-}
 
 var ExpCtrl=function(exp){
     this.exp=exp;
     var ele=exp.ele[0];
     //不可以使用jquery.bind,在重新渲染的时候会被刷掉
-    bindEvent(ele,"mouseover",this.mouseover);
-    bindEvent(ele,"mouseout",this.mouseout);
-    bindEvent(ele,"keydown",this.keydown);
-    bindEvent(ele,"keyup",this.keyup);
+    bindEvent(ele,"mouseover",this.mouseover,{refuseBubble:true,scope:this});
+    bindEvent(ele,"mouseout",this.mouseout,{refuseBubble:true,scope:this});
+    bindEvent(ele,"mousedown",this.mousedown,{refuseBubble:true,scope:this});
+    bindEvent(ele,"keydown",this.keydown,{refuseBubble:true,scope:this});
+    bindEvent(ele,"keyup",this.keyup,{refuseBubble:true,scope:this});
 }
 buildProto(ExpCtrl,{
+    /**删除一个子节点，通常仅仅是将其清空**/
     removeChild:function(child){
         var childIndex=this.index(child);
-        if(childIndex!=-1){
-            child.remove();
-            this.exp.children.splice(childIndex,1);
-        }
+        child.remove();
+        var newLiner=new LinerExp([]);
+        this.exp.children[childIndex]=newLiner
+        newLiner.parent=this.exp;
+        this.root().refresh();
+        newLiner.children[0].ctrl.select();
     },
+    /**删除当前节点及其子孙节点**/
     remove:function(){
-        Exp.instances[this.exp.index]=null;
-        while(child=this.child(0)){
-            this.removeChild(child);
+        for(var i=0,il=this.exp.children.length;i<il;i++){
+            this.exp.children[i].ctrl.remove();
         }
+        this.exp.children=null;
+    },
+    root:function(){
+        var parent=this.exp.parent;
+        while(!(parent instanceof Fomula)){
+            parent=parent.parent;
+        } 
+        return parent;
     },
     parent:function(){
         if(this.exp.parent)
@@ -210,87 +266,80 @@ buildProto(ExpCtrl,{
         }
     },
     mouseover:function(e){
-        var ele=$(this);
-        ele.addClass("hover");
-        e.stopPropagation();
-        return false;
+        this.exp.ele.addClass("hover");
     },
     mouseout:function(e){
-        var ele=$(this);
-        ele.removeClass("hover")
-        e.stopPropagation();
-        return false;
+        this.exp.ele.removeClass("hover")
+    },
+    mousedown:function(e){
+        this.select();
+        //FIXME: without preventDefault the select will lost focus immediately
+        if(!(this.exp instanceof TextExp))
+            e.preventDefault();
     },
     keydown:function(e){
-        var ele=$(this);
-        var _this=Exp.getInstance(ele);
         var specialKey=true;
         if(e.keyCode==KEY.up){
-            var parent=_this.parent();
+            var parent=this.parent();
             if(parent)
                 parent.select();
         }else if(e.keyCode==KEY.down){
-            var child=_this.child(0);
+            var child=this.child(0);
             if(child)
                 child.select();
         }else if(e.keyCode==KEY.left){
-            var dest=_this.prev();
+            var dest=this.prev();
             if(dest){
                 dest.select(-1);
             }
         }else if(e.keyCode==KEY.right){
-            var dest=_this.next();
+            var dest=this.next();
             if(dest){
                 dest.select(0);
             }
         }else if(e.keyCode==KEY.del){
-            _this.parent().removeChild(_this);
+            this.parent().removeChild(this);
         }else if(e.keyCode==KEY.back){
         }else if(e.keyCode==KEY.ctrl){
-            var right=_this.prev();
-            var left=_this.next();
-            var up=_this.parent();
-            var down=_this.child(0);
+            var right=this.prev();
+            var left=this.next();
+            //var up=_this.parent();
+            //var down=_this.child(0);
             if(right){
                 right.exp.ele.addClass("indicate")
             }
             if(left){
                 left.exp.ele.addClass("indicate")
             }
-            if(up){
-                up.exp.ele.addClass("indicate")
-            }
-            if(down){
-                down.exp.ele.addClass("indicate")
-            }
+            //if(up){
+            //    up.exp.ele.addClass("indicate")
+            //}
+            //if(down){
+            //    down.exp.ele.addClass("indicate")
+            //}
         }else{
             specialKey=false;
         }if(specialKey){
-            e.stopPropagation();
             e.preventDefault();
         }
     },
     keyup:function(e){
-        var ele=$(this);
-        var _this=Exp.getInstance(ele);
         if(e.keyCode==KEY.ctrl){
-            _this.exp.root.ele.find(".indicate").removeClass("indicate");
+            this.root().anchor.find(".indicate").removeClass("indicate");
         }
     },
     focus:function(e){
-        e.stopPropagation();
-        var ele=$(this);
-        ele.addClass("focus");
+        this.exp.ele.addClass("focus");
+        this.root().focusExp=this;
     },
     blur:function(e){
-        e.stopPropagation();
-        var ele=$(this);
-        ele.removeClass("focus");
-    }    
+        this.exp.ele.removeClass("focus");
+        this.root().focusExp=null;
+    }
 });
 /////////text////////////////////////////////////////////////////////////////////////////
-var TextExp=function(parent,value){
-    this.base.call(this,parent);
+var TextExp=function(value){
+    this.base.call(this,[]);
     this.ctrl=new TextExpCtrl(this);
     this.value=value||"";
     this.ele.addClass("text");
@@ -298,7 +347,7 @@ var TextExp=function(parent,value){
 buildProto(TextExp,{
     render:function(size){
         this.ele.empty();
-        this.ele.html(this.value).css("font-size",size);
+        this.ele.html(this.value.replace(/ /g,"&nbsp;")).css("font-size",size);
         $("#TEST").html(this.ele);
         this.height=this.ele.height();
         this.baseline=this.height*0.5;
@@ -308,17 +357,15 @@ buildProto(TextExp,{
 var TextExpCtrl=function(exp){
     this.base.call(this,exp);
     var ele=exp.ele[0];
-    bindEvent(ele,"focus",this.focus);
-    bindEvent(ele,"blur",this.blur);
-    bindEvent(ele,"input",this.input);
+    bindEvent(ele,"focus",this.focus,{refuseBubble:true,scope:this});
+    bindEvent(ele,"blur",this.blur,{refuseBubble:true,scope:this});
     exp.ele.attr("spellcheck","false");
     exp.ele.attr("contenteditable","true");
 }
 buildProto(TextExpCtrl,{
     keydown:function(e){
-        var ele=$(this);
-        e.stopPropagation();
-        var range=Selection.getRange(0);
+        var ele=this.exp.ele;
+        var range=Selection.getRange();
         var value=ele.text();
         if(e.keyCode==KEY.del || e.keyCode==KEY.back){
             return;
@@ -327,18 +374,38 @@ buildProto(TextExpCtrl,{
             return;
         if(e.keyCode==KEY.right && !(range.startOffset==range.endOffset && range.endOffset==value.length))
             return;
-        //if(e.keyCode==KEY.left || e.keyCode==KEY.right || e.keyCode==KEY.up || e.keyCode==KEY.down)
-            ExpCtrl.prototype.keydown.call(this,e);
+        ExpCtrl.prototype.keydown.call(this,e);
     },
-    input:function(){
-        var ele=$(this);
-        var _this=Exp.getInstance(ele);
-        _this.exp.value=ele.html();
+    blur:function(e){
+        this.exp.value=this.exp.ele.text();
+        ExpCtrl.prototype.blur.call(this,e);
+    },
+    insert:function(){
+        var range=Selection.getRange();
+        
+        //chrome bug
+        this.exp.ele.blur();
+        
+        var value1=this.exp.value.substring(0,range.startOffset);
+        var value2=this.exp.value.substring(range.endOffset);
+        var newExp=new FractionExp();
+        newExp.parent=this.exp;
+        var newText=new TextExp(value1);
+        newText.parent=this.exp;
+        this.exp.value=value2;
+        var arr=this.exp.parent.children;
+        var i=this.index();
+        arr.splice(i,0,newText,newExp);
+        this.root().refresh();
     }
 },ExpCtrl);
 ///////////liner////////////////////////////////////////////////////////////////////////////
-var LinerExp=function(parent,value){
-    this.base.call(this,parent);
+var LinerExp=function(children){
+    if(!(children[0] instanceof TextExp))
+        children.unshift(new TextExp(""));
+    if(!(children[children.length-1] instanceof TextExp))
+        children.push(new TextExp(""));
+    this.base.call(this,children);
     this.ctrl=new LinerExpCtrl(this);
     this.ele.addClass("liner");
 }
@@ -368,27 +435,21 @@ buildProto(LinerExpCtrl,{
         var childIndex=this.index(child);
         if(!child)
             return;
-        if(child instanceof TextExp)
+        if(child instanceof TextExp){
             this.exp.children[childIndex]=new TextExp();
-            
-        var l=countHtml(this.exp.children[childIndex-1].value);
+            return;
+        }
+        var l=this.exp.children[childIndex-1].value.length;
         this.exp.children[childIndex-1].value+=this.exp.children[childIndex+1].value;
         this.exp.children.splice(childIndex,2);
-        this.exp.refresh();
+        this.root().refresh();
         this.exp.children[childIndex-1].ctrl.select();
-        Selection.select(this.exp.children[childIndex-1].ele[0],l,l);
-    },
-    remove:function(){
-        while(child=this.child(0)){
-            child.remove(true);
-            this.exp.children.shift();
-        }
-        this.exp.children=[new TextExp(this.exp,"")];
+        Selection.select(this.exp.children[childIndex-1].ele[0],l);
     }
 },ExpCtrl);
 //////fraction////////////////////////////////////////////////////////////////////////////
-var FractionExp=function(parent,value){
-    this.base.call(this,parent);
+var FractionExp=function(lower,upper){
+    this.base.call(this,[lower,upper]);
     this.ctrl=new FractionExpCtrl(this);
     this.ele.addClass("fraction");
 }
@@ -404,25 +465,17 @@ buildProto(FractionExp,{
         return this.ele;
     }
 },Exp);
-FractionExp.UPPER=1;
 FractionExp.LOWER=0;
+FractionExp.UPPER=1;
+
 
 var FractionExpCtrl=function(exp){
     this.base.call(this,exp);
 }
-buildProto(FractionExpCtrl,{
-    removeChild:function(child){
-        var childIndex=this.index(child);
-        child.remove();
-        this.exp.children[childIndex]=new LinerExp(this);
-        this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
-        this.exp.refresh();
-        this.exp.children[childIndex].children[0].ctrl.select();
-    }
-},ExpCtrl);
+buildProto(FractionExpCtrl,{},ExpCtrl);
 ///////corner//////////////////////////////////////////////////////////////////////////
-var CornerExp=function(parent,value){
-    this.base.call(this,parent);
+var CornerExp=function(lower,upper){
+    this.base.call(this,[lower,upper]);
     this.ctrl=new FractionExpCtrl(this);
     this.ele.addClass("fraction");
 }
@@ -447,25 +500,16 @@ buildProto(CornerExp,{
         return max;
     }
 },Exp);
-CornerExp.UPPER=1;
 CornerExp.LOWER=0;
+CornerExp.UPPER=1;
 
 var CornerExpCtrl=function(exp){
     this.base.call(this,exp);
 }
-buildProto(CornerExpCtrl,{
-    removeChild:function(child){
-        var childIndex=this.index(child);
-        child.remove();
-        this.exp.children[childIndex]=new LinerExp(this);
-        this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
-        this.exp.refresh();
-        this.exp.children[childIndex].children[0].ctrl.select();
-    }
-},ExpCtrl);
+buildProto(CornerExpCtrl,{},ExpCtrl);
 //////radical////////////////////////////////////////////////////////////////////////////
-var RadicalExp=function(parent,value){
-    this.base.call(this,parent);
+var RadicalExp=function(exponent,base){
+    this.base.call(this,[exponent,base]);
     this.ctrl=new RadicalExpCtrl(this);
     this.ele.addClass("radical");
 }
@@ -493,27 +537,17 @@ buildProto(RadicalExp,{
         return max;
     }
 },Exp);
-RadicalExp.BASE=1;
 RadicalExp.EXPONENT=0;
+RadicalExp.BASE=1;
 
 var RadicalExpCtrl=function(exp){
     this.base.call(this,exp);
 }
-buildProto(RadicalExpCtrl,{
-    removeChild:function(child){
-        var childIndex=this.index(child);
-        child.remove();
-        var newChild=new LinerExp(this);
-        this.exp.children[childIndex]=newChild;
-        newChild.children[0]=new TextExp(newChild,"");
-        this.exp.refresh();
-        newChild.children[0].ctrl.select();
-    }
-},ExpCtrl);
+buildProto(RadicalExpCtrl,{},ExpCtrl);
 
 //////bracket////////////////////////////////////////////////////////////////////////////
-var BracketExp=function(parent,value){
-    this.base.call(this,parent);
+var BracketExp=function(children){
+    this.base.call(this,children);
     this.ctrl=new BracketExpCtrl(this);
     this.ele.addClass("bracket");
 }
@@ -538,11 +572,11 @@ var BracketExpCtrl=function(exp){
 buildProto(BracketExpCtrl,{
     removeChild:function(child){
         var childIndex=this.index(child);
-        child.remove();
-        this.exp.children[childIndex]=new LinerExp(this);
-        this.exp.children[childIndex].children[0]=new TextExp(this.exp.children[childIndex],"");
-        this.exp.refresh();
-        this.exp.children[childIndex].children[0].ctrl.select();
+        if(childIndex!=-1){
+            child.remove();
+            this.exp.children.splice(childIndex,1);
+        }
+        this.root().refresh();
     }
 },ExpCtrl);
 ////////////////////////////////////////////////////////////////////////////
@@ -568,18 +602,18 @@ var Agent={
         $("#AGENT").focus();
     },
     agentKeyDown:function(e){
-        Agent.delegater.keydown.call(Agent.delegater.exp.ele,e);
+        Agent.delegater.keydown.call(Agent.delegater,e);
     },
     agentKeyUp:function(e){
-        Agent.delegater.keyup.call(Agent.delegater.exp.ele,e);
+        Agent.delegater.keyup.call(Agent.delegater,e);
     },
     agentFocus:function(e){
         if(Agent.delegater)
-            Agent.delegater.focus.call(Agent.delegater.exp.ele,e);
+            Agent.delegater.focus.call(Agent.delegater,e);
     },
     agentBlur:function(e){
         if(Agent.delegater)
-            Agent.delegater.blur.call(Agent.delegater.exp.ele,e);
+            Agent.delegater.blur.call(Agent.delegater,e);
     }
 }
 $("#AGENT").keydown(Agent.agentKeyDown).keyup(Agent.agentKeyUp).blur(Agent.agentBlur).focus(Agent.agentFocus);
@@ -592,115 +626,48 @@ var ExpType={
     radical:4,
     corner:5
 }
-var module=
-{type:2,children:[
-    {type:1,children:[
-        "x",
-        {type:5,
-            upper:"",
-            lower:"1"
-        },
-        " = ",
-        {type:3,
-            upper:{type:1,children:[
-                "- b + ",
-                {type:4,
-                    base:{type:1,children:[
-                        {type:0,value:"b"},
-                        {type:5,
-                            upper:"2",
-                            lower:""
-                        },
-                        " - 4ac"
-                    ]},
-                    exponent:"2"
-                },
-                ""
-            ]},
-            lower:"2a"
-        },
-        ""
-    ]},
-    {type:1,children:[
-        "x",
-        {type:5,
-            upper:"",
-            lower:"2"
-        },
-        " = ",
-        {type:3,
-            upper:{type:1,children:[
-                "- b - ",
-                {type:4,
-                    base:{type:1,children:[
-                        {type:0,value:"b"},
-                        {type:5,
-                            upper:"2",
-                            lower:""
-                        },
-                        " - 4ac"
-                    ]},
-                    exponent:"2"
-                },
-                ""
-            ]},
-            lower:"2a"
-        },
-        ""
-    ]}
-]};
+
 function warp(exp){
     if(exp instanceof LinerExp)
         return exp;
-    var liner=new LinerExp(exp.parent);
-    exp.parent=liner;
-    liner.children[0]=exp;
-    return liner;
+    if(exp instanceof TextExp)
+        return liner=new LinerExp([exp]);
 }
-function moduleReader(parent,src){
+function moduleReader(src){
+    if(!src)
+        return;
     if(typeof(src)=="string"){
-        return new TextExp(parent,src.replace(/ /g,"&nbsp;"));
+        return new TextExp(src);
     }
     else if(src.type==ExpType.text){
-        return new TextExp(parent,src.value.replace(/ /g,"&nbsp;"));
+        return new TextExp(src.value);
     }else if(src.type==ExpType.liner){
-        var exp=new LinerExp(parent);
+        var children=[];
         for(var j=src.children.length-1;j>=0;j--){
-            exp.children.unshift(moduleReader(exp,src.children[j]));
+            children.unshift(moduleReader(src.children[j]));
         }
-        return exp;
+        return new LinerExp(children);
     }else if(src.type==ExpType.fraction){
-        var exp=new FractionExp(parent);
-        exp.children[FractionExp.UPPER]=warp(moduleReader(exp,src.upper));
-        exp.children[FractionExp.LOWER]=warp(moduleReader(exp,src.lower));
-        return exp;
+        return new FractionExp(warp(moduleReader(src.lower)),warp(moduleReader(src.upper)));
     }else if(src.type==ExpType.bracket){
-        var exp=new BracketExp(parent);
+        var children=[];
         for(var j=src.children.length-1;j>=0;j--){
-            exp.children.unshift(moduleReader(exp,src.children[j]));
+            children.unshift(moduleReader(src.children[j]));
         }
-        return exp;
+        return new BracketExp(children);
     }else if(src.type==ExpType.radical){
-        var exp=new RadicalExp(parent);
-        exp.children[RadicalExp.BASE]=warp(moduleReader(exp,src.base));
-        exp.children[RadicalExp.EXPONENT]=warp(moduleReader(exp,src.exponent));
-        return exp;
+        return new RadicalExp(warp(moduleReader(src.exponent)),warp(moduleReader(src.base)));
     }else if(src.type==ExpType.corner){
-        var exp=new CornerExp(parent);
-        exp.children[CornerExp.UPPER]=warp(moduleReader(exp,src.upper));
-        exp.children[CornerExp.LOWER]=warp(moduleReader(exp,src.lower));
-        return exp;
+        return new CornerExp(warp(moduleReader(src.lower)),warp(moduleReader(src.upper)));
     }
 }
 
-var Exp1=moduleReader(null,module);
-Exp1.refresh();
 
 function createSymbolIE(type,size){
     if(type=="radical"){
         var w=size/2;
         return  '<v:group style="position:relative;width:'+w+'px;height:'+size+'px;" coordsize="'+w+','+size+'">'+
-                    '<v:PolyLine  fill="false" stroke="black" points="0,'+(size*0.85)+' '+(w*0.1)+','+(size*0.7)+' '+(w*0.4)+','+size+' '+w+',0"/>'+
+                    '<v:PolyLine  fill="false" stroke="black" points="0,'+(size*0.85)+' '+(w*0.1)+','+(size*0.7)+' '+(w*0.4)+','+size+' '+w+',0 '+(w*0.4)+','+size+'"/>'+
                 '</v>';
     }else if(type="bracket"){
         var c=size/2;

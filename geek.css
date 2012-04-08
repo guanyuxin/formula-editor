@@ -2,18 +2,20 @@
     font-family: Arial;
     outline:0;
     position:relative;
-    border:1px solid transparent;
+    padding:1px;
     display:inline;
 }
-    .hover{
-        border:1px dashed black;
-    }
     .focus{
-        background-color:#ffc;
-        border:1px dashed black;
+        background-color:#acf;
+        padding:1px;
+    }
+    .hover{
+        padding:0px;
+        border:1px dashed #aaa;
     }
     .indicate{
         background-color:#cff;
+        padding:0px;
         border:1px dashed #acc;
     }
 /*****/
