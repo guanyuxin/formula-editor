@@ -404,14 +404,14 @@ buildProto(TextExpCtrl,{
 			var newExp=new CornerExp();
 		else if(type=="radical")
 			var newExp=new RadicalExp();
-		else if(type=="bracker")
+		else if(type=="bracket")
 			var newExp=new BracketExp();
 		var value1=this.exp.value.substring(0,range.startOffset);
         var value2=this.exp.value.substring(range.endOffset);
         
-        newExp.parent=this.exp;
+        newExp.parent=this.exp.parent;
         var newText=new TextExp(value1);
-        newText.parent=this.exp;
+        newText.parent=this.exp.parent;
         this.exp.value=value2;
         var arr=this.exp.parent.children;
         var i=this.index();
@@ -422,6 +422,7 @@ buildProto(TextExpCtrl,{
 },ExpCtrl);
 ///////////liner////////////////////////////////////////////////////////////////////////////
 var LinerExp=function(children){
+    children=children||[];
     if(!(children[0] instanceof TextExp))
         children.unshift(new TextExp(""));
     if(!(children[children.length-1] instanceof TextExp))
@@ -568,6 +569,11 @@ buildProto(RadicalExpCtrl,{},ExpCtrl);
 
 //////bracket////////////////////////////////////////////////////////////////////////////
 var BracketExp=function(children){
+    children=children||[];
+    if(children.length<0)
+        children[0]=new LinerExp();
+    if(children.length<1)
+        children[1]=new LinerExp();
     this.base.call(this,children);
     this.ctrl=new BracketExpCtrl(this);
     this.ele.addClass("bracket");
