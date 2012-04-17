@@ -1,6 +1,61 @@
 $(function(){
 var FONT_MIN=17;
 var w3c=!$.browser.msie || $.browser.version>8;
+var keys=[
+    {title:"fraction",data:FractionExp,des:"²åÈë·ÖÊ½"},
+    {title:"radical",data:RadicalExp,des:"²åÈë¸ùÊ½"},
+    {title:"corner",data:CornerExp,des:"²åÈë½Ç±ê"},
+
+    {title:"alpha",data:"¦¡",des:"Ï£À°×ÖÄ¸:°¢¶û·¨"},
+    {title:"beta",data:"¦¢",des:"Ï£À°×ÖÄ¸:±´Ëş"},
+    {title:"gamma",data:"¦£",des:"Ï£À°×ÖÄ¸:Ù¤Âí"},
+    {title:"delta",data:"¦¤",des:"Ï£À°×ÖÄ¸:µÂ¶ûËş"},
+    {title:"epsilon",data:"¦¥",des:"Ï£À°×ÖÄ¸:ÒÁÆÕÎ÷Áú"},
+    {title:"zeta",data:"¦¦",des:"Ï£À°×ÖÄ¸:½ØËş"},
+    {title:"eta",data:"¦§",des:"Ï£À°×ÖÄ¸:°¬Ëş"},
+    {title:"thet",data:"¦¨",des:"Ï£À°×ÖÄ¸:Î÷Ëş"},
+    {title:"iot",data:"¦©",des:"Ï£À°×ÖÄ¸:Ô¼Ëş"},
+    {title:"kappa",data:"¦ª",des:"Ï£À°×ÖÄ¸:¿¨ÅÁ"},
+    {title:"lambda",data:"¦«",des:"Ï£À°×ÖÄ¸:À¼²¼´ï"},
+    {title:"mu",data:"¦¬",des:"Ï£À°×ÖÄ¸:çÑ"},
+    {title:"nu",data:"¦­",des:"Ï£À°×ÖÄ¸:Å¦"},
+    {title:"xi",data:"¦®",des:"Ï£À°×ÖÄ¸:¿ËÎ÷"},
+    {title:"omicron",data:"¦¯",des:"Ï£À°×ÖÄ¸:°ÂÃÜ¿ËÈÖ"},
+    {title:"pi",data:"¦°",des:"Ï£À°×ÖÄ¸:ÅÉ"},
+    {title:"rho",data:"¦±",des:"Ï£À°×ÖÄ¸:Èâ"},
+    {title:"sigma",data:"¦²",des:"Ï£À°×ÖÄ¸:Î÷¸ñÂí"},
+    {title:"tau",data:"¦³",des:"Ï£À°×ÖÄ¸:Ì×"},
+    {title:"upsilon",data:"¦´",des:"Ï£À°×ÖÄ¸:ÓîÆÕÎ÷Áú"},
+    {title:"phi",data:"¦µ",des:"Ï£À°×ÖÄ¸:·ğ°®"},
+    {title:"chi",data:"¦¶",des:"Ï£À°×ÖÄ¸:Î÷"},
+    {title:"psi",data:"¦·",des:"Ï£À°×ÖÄ¸:ÆÕÎ÷"},
+    {title:"omega",data:"¦¸",des:"Ï£À°×ÖÄ¸:Å·Ã×Ù¤"},
+
+    {title:"alpha",data:"¦Á",des:"Ï£À°×ÖÄ¸:°¢¶û·¨"},
+    {title:"beta",data:"¦Â",des:"Ï£À°×ÖÄ¸:±´Ëş"},
+    {title:"gamma",data:"¦Ã",des:"Ï£À°×ÖÄ¸:Ù¤Âí"},
+    {title:"delta",data:"¦Ä",des:"Ï£À°×ÖÄ¸:µÂ¶ûËş"},
+    {title:"epsilon",data:"¦Å",des:"Ï£À°×ÖÄ¸:ÒÁÆÕÎ÷Áú"},
+    {title:"zeta",data:"¦Æ",des:"Ï£À°×ÖÄ¸:½ØËş"},
+    {title:"eta",data:"¦Ç",des:"Ï£À°×ÖÄ¸:°¬Ëş"},
+    {title:"thet",data:"¦È",des:"Ï£À°×ÖÄ¸:Î÷Ëş"},
+    {title:"iot",data:"¦É",des:"Ï£À°×ÖÄ¸:Ô¼Ëş"},
+    {title:"kappa",data:"¦Ê",des:"Ï£À°×ÖÄ¸:¿¨ÅÁ"},
+    {title:"lambda",data:"¦Ë",des:"Ï£À°×ÖÄ¸:À¼²¼´ï"},
+    {title:"mu",data:"¦Ì",des:"Ï£À°×ÖÄ¸:çÑ"},
+    {title:"nu",data:"¦Í",des:"Ï£À°×ÖÄ¸:Å¦"},
+    {title:"xi",data:"¦Î",des:"Ï£À°×ÖÄ¸:¿ËÎ÷"},
+    {title:"omicron",data:"¦Ï",des:"Ï£À°×ÖÄ¸:°ÂÃÜ¿ËÈÖ"},
+    {title:"pi",data:"¦Ğ",des:"Ï£À°×ÖÄ¸:ÅÉ"},
+    {title:"rho",data:"¦Ñ",des:"Ï£À°×ÖÄ¸:Èâ"},
+    {title:"sigma",data:"¦Ò",des:"Ï£À°×ÖÄ¸:Î÷¸ñÂí"},
+    {title:"tau",data:"¦Ó",des:"Ï£À°×ÖÄ¸:Ì×"},
+    {title:"upsilon",data:"¦Ô",des:"Ï£À°×ÖÄ¸:ÓîÆÕÎ÷Áú"},
+    {title:"phi",data:"¦Õ",des:"Ï£À°×ÖÄ¸:·ğ°®"},
+    {title:"chi",data:"¦Ö",des:"Ï£À°×ÖÄ¸:Î÷"},
+    {title:"psi",data:"¦×",des:"Ï£À°×ÖÄ¸:ÆÕÎ÷"},
+    {title:"omega",data:"¦Ø",des:"Ï£À°×ÖÄ¸:Å·Ã×Ù¤"}
+];
 /////////tools////////////////////////////////////////////////////////////////
 /**
     ĞŞ¸ÄÒ»¸öÀàµÄÔ­ĞÍÁ´£¬ÊµÏÖÃæÏòÔ­ĞÍµÄ¼Ì³Ğ
