@@ -7,7 +7,29 @@
     <meta name="description" content="Formula-editor : An online Equation editor" />
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
+    <script type="text/javascript" src="Core.js"></script>
+    <script type="text/javascript" src="geek.js"></script>
+    <link href="geek.css" type="text/css" rel="stylesheet">
+    <style>
+        .btn{
+            text-align:center;
+            display:inline-block;
+            width:100px;
+            height:20px;
+            border:2px solid gray;
+            cursor:hand;
+            margin:3px;
+            font-weight:bold;
+        }
+        .btn:hover{
+            background-color:yellow;
+        }
+        .Suggestion{
+            border:1px solid black;
+            background:white;
+            position:absolute;
+        }
+    </style>
     <title>Formula-editor</title>
   </head>
 
@@ -30,34 +52,23 @@
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>Welcome to GitHub Pages.</h3>
-
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
-
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
-
-<h3>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
+        <section id="main_content" class="inner">
+            <style>v\: * { behavior:url(#default#VML);display:inline-block }</style>
+            <xml:namespace ns="urn:schemas-microsoft-com:vml" prefix="v" />
+            <div id="buttons">
+                <span class="btn" >fraction</span>
+                <span class="btn" >corner</span>
+                <span class="btn" >radical</span>
+                <span class="btn" >bracket</span>
+            </div>
+            <div id="EXP" class="editing">
+            </div>
+            <div type="text" contenteditable="true" style="width:0;height:0;outline:0" id="AGENT"></div>
+            <div class="Suggestion">
+            </div>
+            <div id="TEST"  class="editing">
+            </div>
+        </section>
     </div>
 
     <!-- FOOTER  -->
@@ -72,3 +83,64 @@ $ git checkout gh-pages
 
   </body>
 </html>
+<script>
+$(function(){
+var module=
+{type:2,children:[
+    {type:1,children:[
+        "x",
+        {type:5,
+            lower:"1"
+        },
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b + ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2"
+                        },
+                        " - 4 ac"
+                    ]},
+                    exponent:"2"
+                }
+            ]},
+            lower:"2a"
+        }
+    ]},
+    {type:1,children:[
+        "x",
+        {type:5,
+            lower:"2"
+        },
+        " = ",
+        {type:3,
+            upper:{type:1,children:[
+                "- b - ",
+                {type:4,
+                    base:{type:1,children:[
+                        {type:0,value:"b"},
+                        {type:5,
+                            upper:"2"
+                        },
+                        " - 4ac"
+                    ]},
+                    exponent:"2"
+                }
+            ]},
+            lower:"2a"
+        }
+    ]}
+]};
+window.formula=new Fomula($("#EXP"),module);
+formula.refresh();
+$(".btn").mousedown(function(e){
+    var a=formula.focusExp;
+    console.log(a);
+    a.insert(this.innerHTML);
+    e.preventDefault();
+})
+});
+</script>
