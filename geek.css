@@ -1,0 +1,88 @@
+p{
+    margin:0;
+}
+b{
+    font-weight:bold
+}
+.list{
+    border:1px solid gray
+}
+
+.exp{
+    font-family: Arial;
+    outline:0;
+    position:relative;
+    display:inline;
+}
+.editing .exp{
+	padding:1px;
+}
+.editing .focus{
+        background-color:#acf;
+        padding:1px;
+    }
+.editing .hover{
+        padding:0px;
+        border:1px dashed #aaa;
+    }
+.editing .indicate{
+        background-color:#cff;
+        padding:0px;
+        border:1px dashed #acc;
+    }
+.empty{
+		color:white;
+	}
+.hover.empty{
+		background-color:#fcc;
+		cursor:hand;
+	}
+/*****/
+
+.fraction{
+    text-align:center;
+    display:inline-block;
+}
+.hr{
+    border:0px;
+    border-top:1px solid black;
+}
+
+.text{
+    text-align:left;
+    display:inline-block;
+    min-width:10px;
+    min-height:20px;
+}
+
+.radical{
+    display:inline-block;
+}
+.radical>.block{
+    border-top:1px solid black;
+}
+.radical .exponent{
+    display:inline-block;
+    vertical-align:middle;
+}
+
+.bracket{
+    display: inline-block;
+}
+.bracket .item{
+    margin-bottom:10px;
+    text-align:left;
+}
+
+.symbol,.block{
+    display:inline-block;
+    vertical-align:middle;
+}
+
+.liner{
+    display:block;
+}
+.liner .exp{
+    vertical-align:bottom;
+}
+    
