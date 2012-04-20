@@ -1,6 +1,7 @@
 $(function(){
 var FONT_MIN=17;
 var w3c=!$.browser.msie || $.browser.version>8;
+
 var keys=[
     {title:"fraction",data:FractionExp,des:"插入分式"},
     {title:"radical",data:RadicalExp,des:"插入根式"},
@@ -56,6 +57,16 @@ var keys=[
     {title:"psi",data:"ψ",des:"希腊字母:普西"},
     {title:"omega",data:"ω",des:"希腊字母:欧米伽"}
 ];
+function matchKey(key){
+    var res=[];
+    key=key.toLowerCase();
+    for(var i=0,il=keys.length;i<il;i++){
+        if(keys[i].title.indexOf(key)==0){
+            res.push(keys[i]);
+        }
+    }
+    return res;
+}
 /////////tools////////////////////////////////////////////////////////////////
 /**
     修改一个类的原型链，实现面向原型的继承
@@ -125,6 +136,7 @@ if(w3c){
             var endOffset=rangeRuler.text.length;
             
             return{
+                startContainer:node,
                 startOffset:startOffset,
                 endOffset:endOffset
             };
@@ -149,6 +161,35 @@ if(w3c){
             range.select();
         }
     }
+}
+////////caret position///////////////////////////////////////
+function charPos(container,start){
+    var str1=htmlEncode(container.text().substring(0,start));
+    var str2=htmlEncode(container.text().substring(start));
+    $(container).html(str1+"<span style='display:inline-block'></span>"+str2);
+    var split=$(container).find("span");
+    var pos=split.offset();
+    pos.top+=split.height();
+    $(container).html(str1+str2);
+    return pos;
+}
+var hash = {
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "\\": "&#92;",
+    "&": "&amp;",
+    "'": "&#039;",
+    "\r": "",
+    "\n": "<br>",
+    " ": "&nbsp;"
+};
+function htmlEncode(value){
+    var fReg = /<|>|\'|\"|&|\\|\r\n|\n| /gi;
+    return value.replace(fReg,
+        function(k) {
+            return hash[k];
+        });
 }
 ////////use VML for ie and SVG for the rest ///////////////////
 if(w3c)
@@ -429,24 +470,56 @@ buildProto(TextExpCtrl,{
         if(e.keyCode==KEY.del || e.keyCode==KEY.back){
             return;
         }
-        if(e.keyCode==KEY.left && !(range.startOffset==range.endOffset && range.endOffset==0))
+        if(e.keyCode==KEY.left && !(range.startOffset==range.endOffset && range.endOffset==0)){
             return;
-        if(e.keyCode==KEY.right && !(range.startOffset==range.endOffset && range.endOffset==value.length))
+        }
+        if(e.keyCode==KEY.right && !(range.startOffset==range.endOffset && range.endOffset==value.length)){
             return;
-        ExpCtrl.prototype.keydown.call(this,e);
+        }
+        this.base.prototype.keydown.call(this,e);
+    },
+    keyup:function(e){
+        if(e.keyCode==8 || e.keyCode==46 || (e.keyCode>=65 && e.keyCode<=90)){
+            range=Selection.getRange();
+            var value=this.exp.ele.text();
+            var start=range.startOffset;
+            var front=value.substr(0,start);
+            front=front.split(/[^a-zA-Z]/);
+            front=front[front.length-1];
+            var fl=front.length
+            if(front){
+                var items=matchKey(front);
+                if(items.length!=0){
+                    var str="";
+                    for(var i=0,il=items.length;i<il;i++){
+                        str+="<div class='list'><p><b>"+items[i].title.substring(0,fl)+"</b>"+items[i].title.substring(fl)+"</p>"+items[i].data+"</div>";
+                    }
+                    $(".Suggestion").html(str);
+                    
+                    var pos=charPos($(range.startContainer.parentNode),start-fl);
+                    Selection.select(range.startContainer,start);
+                    
+                    $(".Suggestion").css("top",pos.top);
+                    $(".Suggestion").css("left",pos.left);
+                }else{
+                    $(".Suggestion").html("");
+                }
+            }
+        }
+        this.base.prototype.keyup.call(this,e);
     },
 	focus:function(e){
 		if(!this.exp.value){
 			this.exp.ele.html("").removeClass("empty");
 		}
-		ExpCtrl.prototype.focus.call(this,e);
+		this.base.prototype.focus.call(this,e);
 	},
     blur:function(e){
         this.exp.value=this.exp.ele.text();
 		if(!this.exp.value){
 			this.exp.ele.addClass("empty").html("+");
 		}
-        ExpCtrl.prototype.blur.call(this,e);
+        this.base.prototype.blur.call(this,e);
     },
     insert:function(type){
         var range=Selection.getRange();
