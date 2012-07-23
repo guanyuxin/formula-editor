@@ -1,61 +1,61 @@
-$(function(){
+
 var FONT_MIN=17;
 var w3c=!$.browser.msie || $.browser.version>8;
 
 var keys=[
-    {title:"fraction",data:FractionExp,des:"²åÈë·ÖÊ½"},
-    {title:"radical",data:RadicalExp,des:"²åÈë¸ùÊ½"},
-    {title:"corner",data:CornerExp,des:"²åÈë½Ç±ê"},
+    {title:"fraction",data:FractionExp,des:"æ’å…¥åˆ†å¼"},
+    {title:"radical",data:RadicalExp,des:"æ’å…¥æ ¹å¼"},
+    {title:"corner",data:CornerExp,des:"æ’å…¥è§’æ ‡"},
 
-    {title:"alpha",data:"¦¡",des:"Ï£À°×ÖÄ¸:°¢¶û·¨"},
-    {title:"beta",data:"¦¢",des:"Ï£À°×ÖÄ¸:±´Ëş"},
-    {title:"gamma",data:"¦£",des:"Ï£À°×ÖÄ¸:Ù¤Âí"},
-    {title:"delta",data:"¦¤",des:"Ï£À°×ÖÄ¸:µÂ¶ûËş"},
-    {title:"epsilon",data:"¦¥",des:"Ï£À°×ÖÄ¸:ÒÁÆÕÎ÷Áú"},
-    {title:"zeta",data:"¦¦",des:"Ï£À°×ÖÄ¸:½ØËş"},
-    {title:"eta",data:"¦§",des:"Ï£À°×ÖÄ¸:°¬Ëş"},
-    {title:"thet",data:"¦¨",des:"Ï£À°×ÖÄ¸:Î÷Ëş"},
-    {title:"iot",data:"¦©",des:"Ï£À°×ÖÄ¸:Ô¼Ëş"},
-    {title:"kappa",data:"¦ª",des:"Ï£À°×ÖÄ¸:¿¨ÅÁ"},
-    {title:"lambda",data:"¦«",des:"Ï£À°×ÖÄ¸:À¼²¼´ï"},
-    {title:"mu",data:"¦¬",des:"Ï£À°×ÖÄ¸:çÑ"},
-    {title:"nu",data:"¦­",des:"Ï£À°×ÖÄ¸:Å¦"},
-    {title:"xi",data:"¦®",des:"Ï£À°×ÖÄ¸:¿ËÎ÷"},
-    {title:"omicron",data:"¦¯",des:"Ï£À°×ÖÄ¸:°ÂÃÜ¿ËÈÖ"},
-    {title:"pi",data:"¦°",des:"Ï£À°×ÖÄ¸:ÅÉ"},
-    {title:"rho",data:"¦±",des:"Ï£À°×ÖÄ¸:Èâ"},
-    {title:"sigma",data:"¦²",des:"Ï£À°×ÖÄ¸:Î÷¸ñÂí"},
-    {title:"tau",data:"¦³",des:"Ï£À°×ÖÄ¸:Ì×"},
-    {title:"upsilon",data:"¦´",des:"Ï£À°×ÖÄ¸:ÓîÆÕÎ÷Áú"},
-    {title:"phi",data:"¦µ",des:"Ï£À°×ÖÄ¸:·ğ°®"},
-    {title:"chi",data:"¦¶",des:"Ï£À°×ÖÄ¸:Î÷"},
-    {title:"psi",data:"¦·",des:"Ï£À°×ÖÄ¸:ÆÕÎ÷"},
-    {title:"omega",data:"¦¸",des:"Ï£À°×ÖÄ¸:Å·Ã×Ù¤"},
+    {title:"alpha",data:"Î‘",des:"å¸Œè…Šå­—æ¯:é˜¿å°”æ³•"},
+    {title:"beta",data:"Î’",des:"å¸Œè…Šå­—æ¯:è´å¡”"},
+    {title:"gamma",data:"Î“",des:"å¸Œè…Šå­—æ¯:ä¼½é©¬"},
+    {title:"delta",data:"Î”",des:"å¸Œè…Šå­—æ¯:å¾·å°”å¡”"},
+    {title:"epsilon",data:"Î•",des:"å¸Œè…Šå­—æ¯:ä¼Šæ™®è¥¿é¾™"},
+    {title:"zeta",data:"Î–",des:"å¸Œè…Šå­—æ¯:æˆªå¡”"},
+    {title:"eta",data:"Î—",des:"å¸Œè…Šå­—æ¯:è‰¾å¡”"},
+    {title:"thet",data:"Î˜",des:"å¸Œè…Šå­—æ¯:è¥¿å¡”"},
+    {title:"iot",data:"Î™",des:"å¸Œè…Šå­—æ¯:çº¦å¡”"},
+    {title:"kappa",data:"Îš",des:"å¸Œè…Šå­—æ¯:å¡å¸•"},
+    {title:"lambda",data:"Î›",des:"å¸Œè…Šå­—æ¯:å…°å¸ƒè¾¾"},
+    {title:"mu",data:"Îœ",des:"å¸Œè…Šå­—æ¯:ç¼ª"},
+    {title:"nu",data:"Î",des:"å¸Œè…Šå­—æ¯:çº½"},
+    {title:"xi",data:"Î",des:"å¸Œè…Šå­—æ¯:å…‹è¥¿"},
+    {title:"omicron",data:"ÎŸ",des:"å¸Œè…Šå­—æ¯:å¥¥å¯†å…‹æˆ"},
+    {title:"pi",data:"Î ",des:"å¸Œè…Šå­—æ¯:æ´¾"},
+    {title:"rho",data:"Î¡",des:"å¸Œè…Šå­—æ¯:è‚‰"},
+    {title:"sigma",data:"Î£",des:"å¸Œè…Šå­—æ¯:è¥¿æ ¼é©¬"},
+    {title:"tau",data:"Î¤",des:"å¸Œè…Šå­—æ¯:å¥—"},
+    {title:"upsilon",data:"Î¥",des:"å¸Œè…Šå­—æ¯:å®‡æ™®è¥¿é¾™"},
+    {title:"phi",data:"Î¦",des:"å¸Œè…Šå­—æ¯:ä½›çˆ±"},
+    {title:"chi",data:"Î§",des:"å¸Œè…Šå­—æ¯:è¥¿"},
+    {title:"psi",data:"Î¨",des:"å¸Œè…Šå­—æ¯:æ™®è¥¿"},
+    {title:"omega",data:"Î©",des:"å¸Œè…Šå­—æ¯:æ¬§ç±³ä¼½"},
 
-    {title:"alpha",data:"¦Á",des:"Ï£À°×ÖÄ¸:°¢¶û·¨"},
-    {title:"beta",data:"¦Â",des:"Ï£À°×ÖÄ¸:±´Ëş"},
-    {title:"gamma",data:"¦Ã",des:"Ï£À°×ÖÄ¸:Ù¤Âí"},
-    {title:"delta",data:"¦Ä",des:"Ï£À°×ÖÄ¸:µÂ¶ûËş"},
-    {title:"epsilon",data:"¦Å",des:"Ï£À°×ÖÄ¸:ÒÁÆÕÎ÷Áú"},
-    {title:"zeta",data:"¦Æ",des:"Ï£À°×ÖÄ¸:½ØËş"},
-    {title:"eta",data:"¦Ç",des:"Ï£À°×ÖÄ¸:°¬Ëş"},
-    {title:"thet",data:"¦È",des:"Ï£À°×ÖÄ¸:Î÷Ëş"},
-    {title:"iot",data:"¦É",des:"Ï£À°×ÖÄ¸:Ô¼Ëş"},
-    {title:"kappa",data:"¦Ê",des:"Ï£À°×ÖÄ¸:¿¨ÅÁ"},
-    {title:"lambda",data:"¦Ë",des:"Ï£À°×ÖÄ¸:À¼²¼´ï"},
-    {title:"mu",data:"¦Ì",des:"Ï£À°×ÖÄ¸:çÑ"},
-    {title:"nu",data:"¦Í",des:"Ï£À°×ÖÄ¸:Å¦"},
-    {title:"xi",data:"¦Î",des:"Ï£À°×ÖÄ¸:¿ËÎ÷"},
-    {title:"omicron",data:"¦Ï",des:"Ï£À°×ÖÄ¸:°ÂÃÜ¿ËÈÖ"},
-    {title:"pi",data:"¦Ğ",des:"Ï£À°×ÖÄ¸:ÅÉ"},
-    {title:"rho",data:"¦Ñ",des:"Ï£À°×ÖÄ¸:Èâ"},
-    {title:"sigma",data:"¦Ò",des:"Ï£À°×ÖÄ¸:Î÷¸ñÂí"},
-    {title:"tau",data:"¦Ó",des:"Ï£À°×ÖÄ¸:Ì×"},
-    {title:"upsilon",data:"¦Ô",des:"Ï£À°×ÖÄ¸:ÓîÆÕÎ÷Áú"},
-    {title:"phi",data:"¦Õ",des:"Ï£À°×ÖÄ¸:·ğ°®"},
-    {title:"chi",data:"¦Ö",des:"Ï£À°×ÖÄ¸:Î÷"},
-    {title:"psi",data:"¦×",des:"Ï£À°×ÖÄ¸:ÆÕÎ÷"},
-    {title:"omega",data:"¦Ø",des:"Ï£À°×ÖÄ¸:Å·Ã×Ù¤"}
+    {title:"alpha",data:"Î±",des:"å¸Œè…Šå­—æ¯:é˜¿å°”æ³•"},
+    {title:"beta",data:"Î²",des:"å¸Œè…Šå­—æ¯:è´å¡”"},
+    {title:"gamma",data:"Î³",des:"å¸Œè…Šå­—æ¯:ä¼½é©¬"},
+    {title:"delta",data:"Î´",des:"å¸Œè…Šå­—æ¯:å¾·å°”å¡”"},
+    {title:"epsilon",data:"Îµ",des:"å¸Œè…Šå­—æ¯:ä¼Šæ™®è¥¿é¾™"},
+    {title:"zeta",data:"Î¶",des:"å¸Œè…Šå­—æ¯:æˆªå¡”"},
+    {title:"eta",data:"Î·",des:"å¸Œè…Šå­—æ¯:è‰¾å¡”"},
+    {title:"thet",data:"Î¸",des:"å¸Œè…Šå­—æ¯:è¥¿å¡”"},
+    {title:"iot",data:"Î¹",des:"å¸Œè…Šå­—æ¯:çº¦å¡”"},
+    {title:"kappa",data:"Îº",des:"å¸Œè…Šå­—æ¯:å¡å¸•"},
+    {title:"lambda",data:"Î»",des:"å¸Œè…Šå­—æ¯:å…°å¸ƒè¾¾"},
+    {title:"mu",data:"Î¼",des:"å¸Œè…Šå­—æ¯:ç¼ª"},
+    {title:"nu",data:"Î½",des:"å¸Œè…Šå­—æ¯:çº½"},
+    {title:"xi",data:"Î¾",des:"å¸Œè…Šå­—æ¯:å…‹è¥¿"},
+    {title:"omicron",data:"Î¿",des:"å¸Œè…Šå­—æ¯:å¥¥å¯†å…‹æˆ"},
+    {title:"pi",data:"Ï€",des:"å¸Œè…Šå­—æ¯:æ´¾"},
+    {title:"rho",data:"Ï",des:"å¸Œè…Šå­—æ¯:è‚‰"},
+    {title:"sigma",data:"Ïƒ",des:"å¸Œè…Šå­—æ¯:è¥¿æ ¼é©¬"},
+    {title:"tau",data:"Ï„",des:"å¸Œè…Šå­—æ¯:å¥—"},
+    {title:"upsilon",data:"Ï…",des:"å¸Œè…Šå­—æ¯:å®‡æ™®è¥¿é¾™"},
+    {title:"phi",data:"Ï†",des:"å¸Œè…Šå­—æ¯:ä½›çˆ±"},
+    {title:"chi",data:"Ï‡",des:"å¸Œè…Šå­—æ¯:è¥¿"},
+    {title:"psi",data:"Ïˆ",des:"å¸Œè…Šå­—æ¯:æ™®è¥¿"},
+    {title:"omega",data:"Ï‰",des:"å¸Œè…Šå­—æ¯:æ¬§ç±³ä¼½"}
 ];
 function matchKey(key){
     var res=[];
@@ -69,10 +69,10 @@ function matchKey(key){
 }
 /////////tools////////////////////////////////////////////////////////////////
 /**
-    ĞŞ¸ÄÒ»¸öÀàµÄÔ­ĞÍÁ´£¬ÊµÏÖÃæÏòÔ­ĞÍµÄ¼Ì³Ğ
-    @param origClass:ÒªĞŞ¸ÄµÄÀà
-    @param protoMethods:ÒªÔÚprotoytpeÉÏÌí¼ÓµÄ·½·¨ºÍÊôĞÔ
-    @param protoLink:protoytpeµÄÖ¸Ïò£¨Ò²¾ÍÊÇorigClassµÄ»ùÀà£©,Ä¬ÈÏÎªObject.prototype
+    ä¿®æ”¹ä¸€ä¸ªç±»çš„åŸå‹é“¾ï¼Œå®ç°é¢å‘åŸå‹çš„ç»§æ‰¿
+    @param origClass:è¦ä¿®æ”¹çš„ç±»
+    @param protoMethods:è¦åœ¨protoytpeä¸Šæ·»åŠ çš„æ–¹æ³•å’Œå±æ€§
+    @param protoLink:protoytpeçš„æŒ‡å‘ï¼ˆä¹Ÿå°±æ˜¯origClassçš„åŸºç±»ï¼‰,é»˜è®¤ä¸ºObject.prototype
 */
 function buildProto(origClass,protoObject,protoLink){
     var agencyObject;
@@ -91,7 +91,7 @@ function buildProto(origClass,protoObject,protoLink){
     origClass.prototype.constructor = origClass;
 }
 /**
-    Selection ¼òµ¥µÄÑ¡Ôñ¿ØÖÆ
+    Selection ç®€å•çš„é€‰æ‹©æ§åˆ¶
 */
 if(w3c){
     var Selection={
@@ -277,7 +277,7 @@ buildProto(Exp,{
 var ExpCtrl=function(exp){
     this.exp=exp;
     var ele=exp.ele[0];
-    //²»¿ÉÒÔÊ¹ÓÃjquery.bind,ÔÚÖØĞÂäÖÈ¾µÄÊ±ºò»á±»Ë¢µô
+    //ä¸å¯ä»¥ä½¿ç”¨jquery.bind,åœ¨é‡æ–°æ¸²æŸ“çš„æ—¶å€™ä¼šè¢«åˆ·æ‰
     bindEvent(ele,"mouseover",this.mouseover,{refuseBubble:true,scope:this});
     bindEvent(ele,"mouseout",this.mouseout,{refuseBubble:true,scope:this});
     bindEvent(ele,"mousedown",this.mousedown,{refuseBubble:true,scope:this});
@@ -285,7 +285,7 @@ var ExpCtrl=function(exp){
     bindEvent(ele,"keyup",this.keyup,{refuseBubble:true,scope:this});
 }
 buildProto(ExpCtrl,{
-    /**É¾³ıÒ»¸ö×Ó½Úµã£¬Í¨³£½ö½öÊÇ½«ÆäÇå¿Õ**/
+    /**åˆ é™¤ä¸€ä¸ªå­èŠ‚ç‚¹ï¼Œé€šå¸¸ä»…ä»…æ˜¯å°†å…¶æ¸…ç©º**/
     removeChild:function(child){
         var childIndex=this.index(child);
         child.remove();
@@ -295,7 +295,7 @@ buildProto(ExpCtrl,{
         this.root().refresh();
         newLiner.children[0].ctrl.select();
     },
-    /**É¾³ıµ±Ç°½Úµã¼°Æä×ÓËï½Úµã**/
+    /**åˆ é™¤å½“å‰èŠ‚ç‚¹åŠå…¶å­å­™èŠ‚ç‚¹**/
     remove:function(){
         for(var i=0,il=this.exp.children.length;i<il;i++){
             this.exp.children[i].ctrl.remove();
@@ -669,7 +669,8 @@ buildProto(RadicalExp,{
         var block=this.ele.children(".block");
         block.prepend(this.children[RadicalExp.BASE].render(size).addClass("base"));
         $("#TEST").html(this.ele);
-        this.ele.children(".symbol").html(getSymbol("radical",block.height())).css("margin-left","-7");
+		var blockSize=block.height();
+        this.ele.children(".symbol").html(getSymbol("radical",blockSize)).css("margin-left","-7").css("height",blockSize);
         this.ele.prepend(this.children[RadicalExp.EXPONENT].render(size-5).addClass("exponent"));
         this.height=this.ele.height();
         this.baseline=this.children[RadicalExp.BASE].baseline;
@@ -857,5 +858,3 @@ function createSymbol(type,size){
         return symbol;
     }
 }
-
-});

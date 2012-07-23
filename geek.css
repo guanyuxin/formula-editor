@@ -18,25 +18,25 @@ b{
 	padding:1px;
 }
 .editing .focus{
-        background-color:#acf;
-        padding:1px;
-    }
+    background-color:#acf;
+    padding:1px;
+}
 .editing .hover{
         padding:0px;
         border:1px dashed #aaa;
     }
 .editing .indicate{
-        background-color:#cff;
-        padding:0px;
-        border:1px dashed #acc;
-    }
+    background-color:#cff;
+    padding:0px;
+    border:1px dashed #acc;
+}
 .empty{
-		color:white;
-	}
+	color:white;
+}
 .hover.empty{
-		background-color:#fcc;
-		cursor:hand;
-	}
+    background-color:#fcc;
+    cursor:hand;
+}
 /*****/
 
 .fraction{
